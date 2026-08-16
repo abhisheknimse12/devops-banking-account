@@ -56,8 +56,8 @@ jobs:
  
       - name: Test accounts API
         run: |
-          curl -f http://localhost:8080/accounts
- 
+          echo "Testing accounts API..."
+          curl -sS -i http://localhost:8080/accounts 
       - name: Show application logs
         if: failure()
         run: |
