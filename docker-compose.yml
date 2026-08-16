@@ -1,0 +1,24 @@
+services:
+ 
+  banking-api:
+    build:
+      context: ./application
+    container_name: banking-api-compose
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+ 
+  postgres:
+    image: postgres:16
+    container_name: banking-postgres
+    environment:
+      POSTGRES_DB: banking
+      POSTGRES_USER: banking_user
+      POSTGRES_PASSWORD: banking_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+ 
+volumes:
+  postgres_data:
+ 
