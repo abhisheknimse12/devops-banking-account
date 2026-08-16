@@ -31,7 +31,8 @@ jobs:
             python -m pip show wheel jaraco.context
  
           docker run --rm banking-api:${{ github.sha }} \
-            python -c "import wheel, jaraco.context; print('wheel=', wheel.__version__); print('jaraco_context=', jaraco.context.__version__)"
+            python -c "from importlib.metadata import version; print('wheel=', version('wheel')); print('jaraco_context=', version('jaraco.context'))"
+
  
       - name: Verify image exists
         run: |
