@@ -24,14 +24,14 @@ jobs:
           docker build --no-cache \
             -t banking-api:${{ github.sha }} \
             ./application
- 
+
       - name: Verify Python dependencies
         run: |
           docker run --rm banking-api:${{ github.sha }} \
             python -m pip show wheel jaraco.context
  
           docker run --rm banking-api:${{ github.sha }} \
-            python -c "from importlib.metadata import version; print('wheel=', version('wheel')); print('jaraco_context=', version('jaraco.context'))"
+            sh -c 'python -m pip show wheel | grep "^Version:" && python -m pip show jaraco.context | grep "^Version:"'
 
  
       - name: Verify image exists
