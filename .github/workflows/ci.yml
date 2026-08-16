@@ -1,0 +1,68 @@
+name: Banking API CI
+ 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+ 
+jobs:
+ 
+  build-and-test:
+ 
+    runs-on: ubuntu-latest
+ 
+    steps:
+ 
+      - name: Checkout source code
+        uses: actions/checkout@v4
+ 
+      - name: Validate Python syntax
+        run: |
+          python3 -m py_compile application/app.py
+ 
+      - name: Build Docker image
+        run: |
+          docker compose build
+ 
+      - name: Start application
+        run: |
+          docker compose up -d
+ 
+      - name: Check running containers
+        run: |
+          docker compose ps
+ 
+      - name: Wait for application
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:8080/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+ 
+      - name: Test application health
+        run: |
+          curl -f http://localhost:8080/health
+ 
+      - name: Test database health
+        run: |
+          curl -f http://localhost:8080/db-health
+ 
+      - name: Test accounts API
+        run: |
+          curl -f http://localhost:8080/accounts
+ 
+      - name: Show application logs
+        if: failure()
+        run: |
+          docker compose logs
+ 
+      - name: Stop containers
+        if: always()
+        run: |
+          docker compose down
