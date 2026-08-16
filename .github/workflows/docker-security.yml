@@ -1,0 +1,35 @@
+name: Docker Image Security Scan
+ 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+ 
+permissions:
+  contents: read
+ 
+jobs:
+  docker-security:
+    name: Docker Vulnerability Scan
+    runs-on: ubuntu-latest
+ 
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+ 
+      - name: Build Docker image
+        run: |
+          docker build -t banking-api:${{ github.sha }} ./application
+ 
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: banking-api:${{ github.sha }}
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
