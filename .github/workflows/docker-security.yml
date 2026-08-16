@@ -39,14 +39,14 @@ jobs:
           docker images banking-api
           docker image inspect banking-api:${{ github.sha }} --format '{{.Id}}'
 
-- name: Verify image dependencies
-  run: |
-    docker run --rm banking-api:${{ github.sha }} \
-      python -m pip show wheel jaraco.context
- 
-    echo "---- Installed package versions ----"
-    docker run --rm banking-api:${{ github.sha }} \
-      python -m pip list | grep -E 'wheel|jaraco.context'
+      - name: Verify image dependencies
+        run: |
+          docker run --rm banking-api:${{ github.sha }} \
+            python -m pip show wheel jaraco.context
+
+          echo "---- Installed package versions ----"
+          docker run --rm banking-api:${{ github.sha }} \
+            python -m pip list | grep -E 'wheel|jaraco.context'
  
  
       - name: Scan Docker image with Trivy
