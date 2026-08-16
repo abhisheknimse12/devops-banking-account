@@ -44,11 +44,11 @@ jobs:
           docker run --rm banking-api:${{ github.sha }} \
             python -m pip show setuptools wheel jaraco.context
           echo "========================================"
-          echo "Checking package versions..."
+          echo "Checking python dependency..."
           echo "========================================"
  
           docker run --rm banking-api:${{ github.sha }} \
-            python -c "import importlib.metadata as m; print('setuptools:', m.version('setuptools')); print('wheel:', m.version('wheel')); print('jaraco.context:', m.version('jaraco.context'))"
+            python -m pip check
 
       # ---------------------------------------------------------
       # 3. Verify Docker image exists
