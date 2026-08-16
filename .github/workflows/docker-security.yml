@@ -4,51 +4,113 @@ on:
   push:
     branches:
       - main
+ 
   pull_request:
     branches:
       - main
  
 permissions:
   contents: read
+ 
 jobs:
   docker-security:
     name: Docker Vulnerability Scan
     runs-on: ubuntu-latest
  
     steps:
+ 
+      # ---------------------------------------------------------
+      # 1. Checkout source code
+      # ---------------------------------------------------------
       - name: Checkout source code
         uses: actions/checkout@v4
  
+ 
+      # ---------------------------------------------------------
+      # 2. Build Docker image
+      # ---------------------------------------------------------
       - name: Build Docker image
         run: |
-          docker build --no-cache \
+          docker build \
+            --no-cache \
             -t banking-api:${{ github.sha }} \
             ./application
-
-      - name: Verify Python dependencies
-        run: |
-          docker run --rm banking-api:${{ github.sha }} \
-            python -m pip show wheel jaraco.context
  
-          docker run --rm banking-api:${{ github.sha }} \
-            sh -c 'python -m pip show wheel | grep "^Version:" && python -m pip show jaraco.context | grep "^Version:"'
-
  
+      # ---------------------------------------------------------
+      # 3. Verify Docker image exists
+      # ---------------------------------------------------------
       - name: Verify image exists
         run: |
-          docker images banking-api
-          docker image inspect banking-api:${{ github.sha }} --format '{{.Id}}'
-
-      - name: Verify image dependencies
+          docker image inspect banking-api:${{ github.sha }}
+ 
+ 
+      # ---------------------------------------------------------
+      # 4. Verify Python dependencies inside exact image
+      # ---------------------------------------------------------
+      - name: Verify Python dependencies
         run: |
+          echo "========================================"
+          echo "Python package versions"
+          echo "========================================"
+ 
           docker run --rm banking-api:${{ github.sha }} \
             python -m pip show wheel jaraco.context
-
-          echo "---- Installed package versions ----"
+ 
+          echo ""
+          echo "========================================"
+          echo "Installed package list"
+          echo "========================================"
+ 
           docker run --rm banking-api:${{ github.sha }} \
-            python -m pip list | grep -E 'wheel|jaraco.context'
+            sh -c 'python -m pip list | grep -E "^(wheel|jaraco.context)[[:space:]]"'
  
  
+      # ---------------------------------------------------------
+      # 5. Verify exact Docker image ID
+      # ---------------------------------------------------------
+      - name: Verify exact Docker image
+        run: |
+          echo "========================================"
+          echo "Docker image ID"
+          echo "========================================"
+ 
+          docker inspect banking-api:${{ github.sha }} \
+            --format '{{.Id}}'
+ 
+          echo ""
+          echo "========================================"
+          echo "Docker image details"
+          echo "========================================"
+ 
+          docker image inspect banking-api:${{ github.sha }} \
+            --format 'Repository: {{index .RepoTags 0}}'
+          
+          docker image inspect banking-api:${{ github.sha }} \
+            --format 'Created: {{.Created}}'
+ 
+ 
+      # ---------------------------------------------------------
+      # 6. Check Python package metadata inside image
+      # ---------------------------------------------------------
+      - name: Verify package metadata
+        run: |
+          echo "========================================"
+          echo "Python package metadata"
+          echo "========================================"
+ 
+          docker run --rm banking-api:${{ github.sha }} \
+            sh -c '
+              find /usr/local/lib/python3.9/site-packages \
+              -maxdepth 1 \
+              \( -iname "wheel*" -o -iname "jaraco.context*" \) \
+              -print
+            '
+ 
+ 
+      # ---------------------------------------------------------
+      # 7. Scan Docker image with Trivy
+      # ---------------------------------------------------------
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -57,5 +119,18 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
           vuln-type: os,library
-          severity: CRITICAL,HIGH
-  
+          severity: HIGH,CRITICAL
+          cache: false
+ 
+ 
+      # ---------------------------------------------------------
+      # 8. Display completion status
+      # ---------------------------------------------------------
+      - name: Security scan completed
+        if: success()
+        run: |
+          echo "========================================"
+          echo "Docker security scan completed"
+          echo "No HIGH or CRITICAL vulnerabilities found."
+          echo "========================================"
+ 
