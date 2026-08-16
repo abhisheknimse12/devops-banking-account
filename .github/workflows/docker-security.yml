@@ -41,10 +41,10 @@ jobs:
       # ---------------------------------------------------------
       - name: Verify security package versions
         run: |
-          docker image inspect banking-api:${{ github.sha }} \
+          docker run --rm banking-api:${{ github.sha }} \
             python -m pip show setuptools wheel jaraco.context
           echo "========================================"
-          echo "Checking installed versions..."
+          echo "Checking package versions..."
           echo "========================================"
  
           docker run --rm banking-api:${{ github.sha }} \
