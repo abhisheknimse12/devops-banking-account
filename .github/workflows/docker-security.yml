@@ -10,7 +10,6 @@ on:
  
 permissions:
   contents: read
- 
 jobs:
   docker-security:
     name: Docker Vulnerability Scan
@@ -22,18 +21,23 @@ jobs:
  
       - name: Build Docker image
         run: |
-          docker build --no-cache -t banking-api:${{ github.sha }} ./application
+          docker build --no-cache \
+            -t banking-api:${{ github.sha }} \
+            ./application
  
       - name: Verify Python dependencies
         run: |
-          docker run --rm banking-api:${{ github.sha }} python -m pip show wheel jaraco.context
           docker run --rm banking-api:${{ github.sha }} \
-          python -c "import wheel, jaraco.context; print('wheel:', wheel.__version__); print('jaraco.context:', jaraco.context.__version__)"
-
-     - name: Verify image exists
+            python -m pip show wheel jaraco.context
+ 
+          docker run --rm banking-api:${{ github.sha }} \
+            python -c "import wheel, jaraco.context; print('wheel=', wheel.__version__); print('jaraco_context=', jaraco.context.__version__)"
+ 
+      - name: Verify image exists
         run: |
-          docker mage inspect banking-api:${{ github.sha }} --format '{{.Id}}'
-
+          docker images banking-api
+          docker image inspect banking-api:${{ github.sha }} --format '{{.Id}}'
+ 
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -43,3 +47,4 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL,HIGH
+  
